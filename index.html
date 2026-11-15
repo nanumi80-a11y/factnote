@@ -1563,7 +1563,7 @@ MP4 · MOV · WebM, 500MB 이하</div>
       var isV = item.photo.kind === "video";
       showView(isV ? "video" : "photo");
       $(isV ? "videoInput" : "photoInput").classList.add("hidden");
-      renderPhotoResult(item.photo, null, isV ? "videoResult" : "photoResult");
+      renderPhotoResult(item.photo, null, isV ? "videoResult" : "photoResult", item.ts);
       setCurrent(item);
       return;
     }
@@ -1720,8 +1720,7 @@ MP4 · MOV · WebM, 500MB 이하</div>
       .trim();
   }
   // 복사할 글: 판정 + 주장 + 요약 + 이유 + 고친 문장 + 출처
-  function copyTextOf(root) {
-    var d = root && root._copy;
+  function copyTextOf(root) {    var d = root && root._copy;
     if (!d) return "";
     var r = d.r || {}, ev = d.ev || [];
     var claim = String(d.claim || "").trim();
@@ -1744,6 +1743,57 @@ MP4 · MOV · WebM, 500MB 이하</div>
     lines.push("팩트노트 · " + fmtFull(Date.now()));
     return lines.join("\n");
   }
+  // 사진·영상 결과에서 글로 옮길 때 핵심으로 보는 파일 기록 항목 (화면에 보이는 순서)
+  var KEY_FACT_KEYS = ["파일", "촬영 시각", "파일에 적힌 만든 시각", "촬영 기기", "기기·재생 도구 표시", "AI 도구 표시", "편집 프로그램 기록", "편집·변환 도구 표시", "콘텐츠 자격증명", "위치(GPS)"];
+  // 사진·영상 판정 결과를 글로 복사할 때 쓸 내용: 판정 + 설명 + 요약 + 관찰 + 주의 + 파일 기록 + 설명문 검증 + 옮긴 글
+  function photoCopyText(P, ts) {
+    if (!P) return "";
+    var isVideo = P.kind === "video", what = isVideo ? "영상" : "사진";
+    var lines = [];
+    lines.push("[" + what + " 판정: " + (P.verdict || "판단 유보") + "]" + (P.fileName ? " " + String(P.fileName).trim() : ""));
+    if (P.caption) lines.push("설명: " + String(P.caption).trim());
+    if (P.summary) lines.push("요약: " + String(P.summary).trim());
+    if (P.ai && P.ai.likelihood) lines.push("AI 생성 가능성: " + P.ai.likelihood);
+    var obs = (P.obs || []).slice(0, 5);
+    if (obs.length) {
+      lines.push("관찰된 점:");
+      obs.forEach(function (o) { lines.push("- " + (o.kind ? o.kind + " " : "") + String(o.text || "").trim()); });
+    }
+    var watch = [];
+    (P.susp || []).slice(0, 5).forEach(function (o) {
+      watch.push("- " + (o.where ? "[" + o.where + "] " : "") + (o.strength ? "(" + o.strength + ") " : "") + String(o.text || "").trim());
+    });
+    (P.flags || []).slice(0, 5).forEach(function (f) { watch.push("- " + String(f.text || "").trim()); });
+    if (watch.length) { lines.push("주의·확인할 점:"); lines = lines.concat(watch); }
+    var facts = [];
+    KEY_FACT_KEYS.forEach(function (k) {
+      if (facts.length >= 6) return;
+      for (var i = 0; i < (P.facts || []).length; i++) {
+        if (P.facts[i].k === k) { facts.push("- " + k + ": " + String(P.facts[i].v || "").trim()); break; }
+      }
+    });
+    if (facts.length) { lines.push("파일 기록:"); lines = lines.concat(facts); }
+    if (P.capCheck) {
+      var cr = P.capCheck.r || {}, cev = P.capCheck.ev || [];
+      var used = Array.isArray(cr.used) ? cr.used : [];
+      lines.push("설명 문장 검증: [" + (cr.verdict || "판단 유보") + "] " + String(P.capCheck.claim || "").trim());
+      if (cr.summary) lines.push("  요약: " + String(cr.summary).trim());
+      var picked = [];
+      cev.forEach(function (e, i) { if (used.indexOf(i + 1) >= 0) picked.push(e); });
+      picked = (picked.length ? picked : cev).slice(0, 3);
+      if (picked.length) {
+        lines.push("  출처:");
+        picked.forEach(function (e, i) { lines.push("  " + (i + 1) + ". " + String(e.title || "(제목 없음)").trim() + (e.url ? " — " + e.url : "")); });
+      }
+    }
+    if (isVideo && P.transcript) {
+      var talk = String(P.transcript.text || "").replace(/\s+/g, " ").trim();
+      if (talk) lines.push("옮긴 말(일부): " + (talk.length > 200 ? talk.slice(0, 200) + "…" : talk));
+      if (P.transcript.note) lines.push("옮긴 범위: " + String(P.transcript.note).trim());
+    }
+    lines.push("팩트노트 · " + fmtFull(ts || Date.now()).slice(0, 16));
+    return lines.join("\n");
+  }
   // 클립보드를 쓸 수 없을 때(예전 브라우저·http)를 위한 보조 경로
   function legacyCopy(text) {
     try {
@@ -1761,26 +1811,28 @@ MP4 · MOV · WebM, 500MB 이하</div>
       return !!ok;
     } catch (e) { return false; }
   }
-  var copyTimer = null;
-  function copySummary(root) {
-    var text = copyTextOf(root);
-    var msg = root.querySelector(".r-copyMsg");
-    function say(ok) {
-      if (!msg) return;
-      msg.textContent = ok ? "복사했습니다" : "복사하지 못했습니다. 화면에서 직접 선택해 복사해 주세요.";
-      msg.className = "r-copyMsg " + (ok ? "ok" : "err");
-      clearTimeout(copyTimer);
-      copyTimer = setTimeout(function () { msg.textContent = ""; msg.className = "r-copyMsg"; }, 2400);
-    }
-    if (!text) { say(false); return; }
-    var fallback = function () { say(legacyCopy(text)); };
+  // 복사 결과를 카드 안의 aria-live 자리에 잠깐 알려 준다 (카드마다 자기 자리를 쓴다)
+  function copySay(msg, ok) {
+    if (!msg) return;
+    msg.textContent = ok ? "복사했습니다" : "복사하지 못했습니다. 화면에서 직접 선택해 복사해 주세요.";
+    msg.className = "r-copyMsg " + (ok ? "ok" : "err");
+    clearTimeout(msg._t);
+    msg._t = setTimeout(function () { msg.textContent = ""; msg.className = "r-copyMsg"; }, 2400);
+  }
+  // 클립보드에 넣고 결과를 msg 자리에 알린다 (클립보드를 못 쓰면 예전 방식으로 한 번 더)
+  function writeClipboard(text, msg) {
+    if (!text) { copySay(msg, false); return; }
+    var fallback = function () { copySay(msg, legacyCopy(text)); };
     if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
       try {
-        navigator.clipboard.writeText(text).then(function () { say(true); }, fallback);
+        navigator.clipboard.writeText(text).then(function () { copySay(msg, true); }, fallback);
       } catch (e) { fallback(); }
     } else {
       fallback();
     }
+  }
+  function copySummary(root) {
+    writeClipboard(copyTextOf(root), root.querySelector(".r-copyMsg"));
   }
 
   // ===== 검증 실행 =====
@@ -2668,7 +2720,7 @@ MP4 · MOV · WebM, 500MB 이하</div>
   function phSec(title) { var s = ph("div", "sec"); s.appendChild(ph("div", "sec-h", title)); return s; }
   var STRENGTH_CLS = { "강함": "pill-strong", "중간": "pill-mid", "약함": "pill-weak" };
 
-  function renderPhotoResult(P, thumbUrl, boxId) {
+  function renderPhotoResult(P, thumbUrl, boxId, ts) {
     placeDesk(false);
     var box = $(boxId || "photoResult"), isVideo = P.kind === "video", what = isVideo ? "영상" : "사진";
     box.textContent = "";
@@ -2676,13 +2728,20 @@ MP4 · MOV · WebM, 500MB 이하</div>
     else if (thumbUrl) { var im = ph("img", "photo-thumb"); im.src = thumbUrl; im.alt = "점검한 사진"; box.appendChild(im); }
     else box.appendChild(ph("p", "rs-note", "저장된 점검 결과입니다. " + what + " 자체는 저장하지 않아 미리보기는 없습니다."));
     box.appendChild(ph("h3", "photo-name", P.fileName));
-    if (P.caption) box.appendChild(ph("p", "photo-cap", "사진 설명: " + P.caption));
+    if (P.caption) box.appendChild(ph("p", "photo-cap", what + " 설명: " + P.caption));
 
     var s1 = phSec("종합 점검");
     s1.appendChild(ph("div", "badge " + vClass(P.verdict), P.verdict));
     s1.appendChild(ph("div", "summary", P.summary || ""));
+    var act = ph("div", "res-act");
+    var cpBtn = ph("button", "btn-sec photo-copyBtn", "요약 복사"); cpBtn.type = "button";
+    cpBtn.title = "판정·관찰된 점·파일 기록을 글로 복사합니다";
+    var cpMsg = ph("span", "r-copyMsg"); cpMsg.setAttribute("aria-live", "polite");
+    cpBtn.addEventListener("click", function () { writeClipboard(photoCopyText(P, ts), cpMsg); });
+    act.appendChild(cpBtn); act.appendChild(cpMsg);
+    s1.appendChild(act);
     if (P.upNote) s1.appendChild(ph("div", "rs-note", P.upNote));
-    s1.appendChild(ph("div", "photo-warn", "이 결과는 참고용입니다. 사진이 진짜라고 보증하지 않으며, 기사에 쓰기 전에는 반드시 원본 확인이 필요합니다."));
+    s1.appendChild(ph("div", "photo-warn", "이 결과는 참고용입니다. " + what + "이 진짜라고 보증하지 않으며, 기사에 쓰기 전에는 반드시 원본 확인이 필요합니다."));
     box.appendChild(s1);
 
     var s2 = phSec(what + " 파일에서 읽은 기록 (프로그램이 읽은 사실)");
@@ -2859,7 +2918,7 @@ MP4 · MOV · WebM, 500MB 이하</div>
         finally { statusSink = null; }
       }
       photoMsg("", false);
-      renderPhotoResult(P, photo.url);
+      renderPhotoResult(P, photo.url, null, Date.now());
       $("photoInput").classList.add("hidden");
       var r = { verdict: P.verdict, summary: P.summary, reason: "", reasons: [], dropped: 0, corrected: null, used: [] };
       var item = saveHistory("[사진] " + P.fileName + (caption ? " — " + caption : ""), r, P.capCheck ? P.capCheck.ev : [], null, { photo: P });
@@ -3462,7 +3521,7 @@ MP4 · MOV · WebM, 500MB 이하</div>
         finally { statusSink = null; }
       }
       videoMsg("", false);
-      renderPhotoResult(P, video.url, "videoResult");
+      renderPhotoResult(P, video.url, "videoResult", Date.now());
       $("videoInput").classList.add("hidden");
       var r = { verdict: P.verdict, summary: P.summary, reason: "", reasons: [], dropped: 0, corrected: null, used: [] };
       var stored = Object.assign({}, P, { frames: null });     // 장면 이미지는 기록에 저장하지 않는다
