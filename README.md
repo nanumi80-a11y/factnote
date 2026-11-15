@@ -16,6 +16,9 @@
 - 문서 첨부: PDF·docx·hwpx·txt를 근거로 추가
 - 취재 도우미(챗봇): 화면 오른쪽 아래 버튼. 대화로 주장 판정, 기사 문단에서 확인할 문장 고르기, 방금 판정에 대한 질문, 검색 범위(정부 자료만·최근 한 달 등) 지정
 - 음성 입력(Chrome·Edge), 데스크 확정과 검증 기록 표, 엑셀(CSV) 내려받기
+- 판정 결과의 "요약 복사" 단추: 판정·요약·이유·출처를 글로 한 번에 복사 (기사·메시지에 붙여 넣기)
+- 검증 기록 백업/불러오기: `백업 저장`은 기록을 `factnote-backup-YYYY-MM-DD.json` 하나로 내려받고, `백업 불러오기`는 그 파일에서 기록을 더합니다(지금 기록은 지우지 않고, 같은 기록은 건너뜀)
+- 휴대폰 홈 화면 앱(PWA): `manifest.webmanifest`와 `icon.svg`로 홈 화면에 추가해 전체 화면으로 실행
 
 ## 사용하려면
 
@@ -23,10 +26,10 @@
 2. Tavily는 브라우저에서 바로 부를 수 없어서 **중계 서버**가 필요합니다. 보통은 따로 할 일이 없습니다.
    - **휴대폰·다른 컴퓨터**: <https://nanumi80-a11y.github.io/factnote/> 로 열면 중계 주소가 자동으로 Cloudflare Worker(`https://factnote-relay.nanumi80.workers.dev`)로 잡힙니다. PC를 켜 둘 필요가 없습니다.
    - **내 컴퓨터에서 실행**: [Node.js](https://nodejs.org)를 설치하고 `start.bat`(윈도우)을 실행하면 `http://localhost:8787`이 열립니다. 이 창을 닫으면 멈춥니다.
-   - **내 Cloudflare Worker로 바꾸기**: `cloudflare-worker.js`를 본인 Cloudflare 계정에 올린 뒤, 나온 주소를 설정의 "중계 주소"에 적습니다.
+   - **내 Cloudflare Worker로 바꾸기**: `cloudflare-worker.js`를 본인 Cloudflare 계정에 올린 뒤, 나온 주소를 설정의 "중계 주소"에 적습니다. Worker는 `ALLOWED_ORIGINS`에 적힌 주소(팩트노트를 여는 곳: `https://nanumi80-a11y.github.io`, `http://localhost:8787`, `http://127.0.0.1:8787`)에서 온 요청만 받고, `Origin`이 없거나 목록에 없으면 403으로 막습니다. 팩트노트를 다른 주소에 올린다면 그 주소를 `ALLOWED_ORIGINS`에 더해 다시 올리세요.
 
 ## 알아둘 점
 
 - 입력한 글, 사진, 문서는 분석을 위해 Anthropic(Claude)으로 전송됩니다. 음성 입력은 브라우저의 음성 인식 서비스로 전송됩니다.
-- 검증 기록과 데스크 확정 기록은 사용하는 브라우저에만 저장됩니다. 중요한 기록은 CSV로 내려받아 보관하세요.
+- 검증 기록과 데스크 확정 기록은 사용하는 브라우저에만 저장됩니다. 중요한 기록은 CSV나 백업 파일(JSON)로 내려받아 보관하세요. 브라우저 저장소를 지우거나 다른 기기로 옮길 때는 `백업 불러오기`로 되살릴 수 있습니다.
 - 옛 한글(.hwp), 옛 Word(.doc) 파일은 읽지 못합니다. PDF나 .hwpx, .docx로 저장해 올려 주세요.
