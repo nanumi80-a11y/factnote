@@ -4,6 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>팩트노트 · 출처로 확인하는 팩트체크</title>
+<meta name="description" content="주장·기사·사진·영상을 출처로 확인하고 판정을 남기는 팩트체크 도구">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2a5bd7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="팩트노트">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>
   :root {
@@ -146,6 +155,12 @@
   #history { max-width:1100px; }
   .hist-bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
   .hist-bar .muted { color:var(--muted); font-size:14px; margin-right:auto; }
+  .backup-msg { flex-basis:100%; font-size:13px; line-height:20px; color:var(--muted); }
+  .backup-msg.err { color:var(--err); font-weight:600; }
+  .res-act { display:flex; align-items:center; gap:10px; margin-top:14px; flex-wrap:wrap; }
+  .r-copyMsg { font-size:13px; line-height:20px; color:var(--muted); }
+  .r-copyMsg.ok { color:#1e7a37; font-weight:600; }
+  .r-copyMsg.err { color:var(--err); font-weight:600; }
   .btn-sec:disabled { opacity:.4; cursor:default; }
   .tbl-wrap { overflow-x:auto; border-radius:12px; box-shadow:0 0 0 .67px rgba(11,40,51,.15); background:var(--card); }
   .tbl { border-collapse:collapse; width:100%; min-width:860px; font-size:14px; line-height:22px; }
@@ -590,8 +605,12 @@ MP4 · MOV · WebM, 500MB 이하</div>
       <h2 class="q">검증 기록</h2>
       <div class="hist-bar">
         <span id="deskCount" class="muted"></span>
+        <button class="btn-sec" id="backupBtn" type="button" title="검증 기록과 데스크 확정 기록을 JSON 파일 하나로 저장합니다">백업 저장</button>
+        <button class="btn-sec" id="restoreBtn" type="button" title="내려받아 둔 백업 파일에서 기록을 더합니다 (지금 기록은 지우지 않습니다)">백업 불러오기</button>
+        <input type="file" id="restoreFile" accept=".json,application/json" hidden>
         <button class="btn-sec" id="csvBtn" type="button">엑셀로 내려받기</button>
         <button class="btn-sec" id="deskClear" type="button">확정 기록 지우기</button>
+        <span id="backupMsg" class="backup-msg" aria-live="polite"></span>
       </div>
       <p id="deskEmpty" class="empty-p">아직 저장한 기록이 없어요. 검증 결과 아래 "데스크 확정"에서 최종 판정을 고르고 "기록에 저장"을 누르면 여기에 쌓입니다.</p>
       <div id="deskTableWrap" class="tbl-wrap hidden">
@@ -613,6 +632,10 @@ MP4 · MOV · WebM, 500MB 이하</div>
       <div class="sec-h"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M9 12l2.2 2.2L15.5 10"/></svg>판정</div>
       <div class="badge r-badge"></div>
       <div class="summary r-summary"></div>
+      <div class="res-act">
+        <button class="btn-sec r-copyBtn" type="button" title="판정·이유·출처를 글로 복사합니다">요약 복사</button>
+        <span class="r-copyMsg" aria-live="polite"></span>
+      </div>
     </div>
     <div class="sec">
       <div class="sec-h"><svg class="i" viewBox="0 0 24 24"><path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/></svg>출처</div>
@@ -1324,8 +1347,10 @@ MP4 · MOV · WebM, 500MB 이하</div>
       el.evList.appendChild(box);
     });
   }
-  function renderAll(r, ev) {
+  function renderAll(r, ev, claim) {
     currentEv = ev;
+    // 이 결과 카드의 '요약 복사'가 쓸 내용을 카드 자신에 붙여 둔다 (주장별 결과도 각자 자기 것을 갖는다)
+    if (curRoot) curRoot._copy = { claim: claim || (el.threadTitle ? el.threadTitle.textContent : ""), r: r, ev: ev || [] };
     renderResult(r); renderSources(ev, r.used); renderEvidence(ev, r.used);
   }
 
@@ -1363,7 +1388,7 @@ MP4 · MOV · WebM, 500MB 이하</div>
     }
     resetThread(item.claim);
     showView("thread");
-    if (item.multi) renderMultiView(item.multi); else renderAll(item.r, item.ev);
+    if (item.multi) renderMultiView(item.multi); else renderAll(item.r, item.ev, item.claim);
     setCurrent(item);
   }
   function fmtTime(ts) { try { return new Date(ts).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; } }
@@ -1474,7 +1499,12 @@ MP4 · MOV · WebM, 500MB 이하</div>
   // ===== 검증 실행 =====
   // ===== 결과 영역 연결 (한 개짜리 결과와 주장별 결과가 같은 그리기 코드를 쓰도록) =====
   var curRoot = null, singleRoot = null;
-  function buildRes() { return $("tplResult").content.firstElementChild.cloneNode(true); }
+  function buildRes() {
+    var root = $("tplResult").content.firstElementChild.cloneNode(true);
+    var btn = root.querySelector(".r-copyBtn");
+    if (btn) btn.addEventListener("click", function () { copySummary(root); });
+    return root;
+  }
   function bindResult(root, outer) {
     curRoot = root;
     el.result = outer || root;
@@ -1489,6 +1519,87 @@ MP4 · MOV · WebM, 500MB 이하</div>
   function bindSingle() {
     if (!singleRoot) { singleRoot = buildRes(); $("result").appendChild(singleRoot); }
     bindResult(singleRoot, $("result"));
+  }
+
+  // ===== 판정 결과 한 번에 복사 =====
+  // 이유는 구조화된 목록(reasons)이면 문장과 인용문을, 예전 기록이면 이유 글을 그대로 쓴다.
+  function copyReasonText(r) {
+    if (r && Array.isArray(r.reasons) && r.reasons.length) {
+      return r.reasons.map(function (it) {
+        var t = "- " + String(it.text || "").trim();
+        if (it.quote) t += "\n  “" + String(it.quote).trim() + "”";
+        return t;
+      }).join("\n");
+    }
+    return String((r && r.reason) || "")
+      .replace(/\s*\[\d+\]\s*/g, " ")          // 근거 번호는 글로 옮길 때 빼고, 남는 두 칸도 한 칸으로
+      .replace(/[ \t]{2,}/g, " ")
+      .replace(/[ \t]+\n/g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  }
+  // 복사할 글: 판정 + 주장 + 요약 + 이유 + 고친 문장 + 출처
+  function copyTextOf(root) {
+    var d = root && root._copy;
+    if (!d) return "";
+    var r = d.r || {}, ev = d.ev || [];
+    var claim = String(d.claim || "").trim();
+    var lines = [];
+    lines.push("[판정: " + (r.verdict || "판단 유보") + "]" + (claim ? " " + claim : ""));
+    if (r.summary) lines.push("요약: " + String(r.summary).trim());
+    var why = copyReasonText(r);
+    if (why) lines.push("이유:\n" + why);
+    if (r.corrected && r.corrected.text) lines.push("고친 문장: " + String(r.corrected.text).trim());
+    var used = Array.isArray(r.used) ? r.used : [];
+    var picked = [];
+    ev.forEach(function (e, i) { if (used.indexOf(i + 1) >= 0) picked.push(e); });
+    if (!picked.length) picked = ev.slice(0, 5); else picked = picked.slice(0, 5);
+    if (picked.length) {
+      lines.push("출처:");
+      picked.forEach(function (e, i) {
+        lines.push((i + 1) + ". " + String(e.title || "(제목 없음)").trim() + (e.url ? " — " + e.url : ""));
+      });
+    }
+    lines.push("팩트노트 · " + fmtFull(Date.now()));
+    return lines.join("\n");
+  }
+  // 클립보드를 쓸 수 없을 때(예전 브라우저·http)를 위한 보조 경로
+  function legacyCopy(text) {
+    try {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.top = "-1000px";
+      ta.style.left = "-1000px";
+      document.body.appendChild(ta);
+      ta.select();
+      try { ta.setSelectionRange(0, text.length); } catch (e2) { /* 무시 */ }
+      var ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      return !!ok;
+    } catch (e) { return false; }
+  }
+  var copyTimer = null;
+  function copySummary(root) {
+    var text = copyTextOf(root);
+    var msg = root.querySelector(".r-copyMsg");
+    function say(ok) {
+      if (!msg) return;
+      msg.textContent = ok ? "복사했습니다" : "복사하지 못했습니다. 화면에서 직접 선택해 복사해 주세요.";
+      msg.className = "r-copyMsg " + (ok ? "ok" : "err");
+      clearTimeout(copyTimer);
+      copyTimer = setTimeout(function () { msg.textContent = ""; msg.className = "r-copyMsg"; }, 2400);
+    }
+    if (!text) { say(false); return; }
+    var fallback = function () { say(legacyCopy(text)); };
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+      try {
+        navigator.clipboard.writeText(text).then(function () { say(true); }, fallback);
+      } catch (e) { fallback(); }
+    } else {
+      fallback();
+    }
   }
 
   // ===== 검증 실행 =====
@@ -1528,7 +1639,7 @@ MP4 · MOV · WebM, 500MB 이하</div>
       var one = await verifyOne(claim, tk, gk, curDocs());
       if (my !== runId) return;
       setStatus("");
-      renderAll(one.r, one.ev);
+      renderAll(one.r, one.ev, claim);
       setCurrent(saveHistory(claim, one.r, one.ev));
     } catch (e) {
       if (my !== runId) return;
@@ -1622,7 +1733,7 @@ MP4 · MOV · WebM, 500MB 이하</div>
       part.appendChild(ph); part.appendChild(pc); part.appendChild(root);
       el.parts.appendChild(part);
       bindResult(root, root);
-      renderAll(x.r, x.ev);
+      renderAll(x.r, x.ev, x.claim);
     });
     el.parts.classList.remove("hidden");
     bindSingle();
@@ -1826,6 +1937,112 @@ MP4 · MOV · WebM, 500MB 이하</div>
   }
   $("csvBtn").addEventListener("click", exportCsv);
 
+  // ----- 검증 기록 백업 / 불러오기 (JSON) -----
+  // 브라우저 저장소(localStorage)를 지우거나 다른 기기로 옮길 때를 위해, 자동 기록과 데스크 확정 기록을 파일 하나로 내려받는다.
+  var RESTORE_MAX = 300;      // 합친 기록이 이보다 많으면 오래된 것부터 버린다 (지금 있는 기록은 최우선으로 남긴다)
+  var backupTimer = null;
+  function backupMsg(text, isErr) {
+    var m = $("backupMsg");
+    if (!m) return;
+    m.textContent = text || "";
+    m.className = "backup-msg" + (isErr ? " err" : "");
+    clearTimeout(backupTimer);
+    if (text) backupTimer = setTimeout(function () { m.textContent = ""; }, 7000);
+  }
+  function backupFileName() {
+    var d = new Date();
+    return "factnote-backup-" + d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()) + ".json";
+  }
+  function exportBackup() {
+    var data = { app: "factnote", version: 1, exportedAt: new Date().toISOString(), history: readHistory(), desk: readDesk() };
+    var blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = backupFileName();
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    backupMsg("백업 파일을 내려받았습니다 (검증 기록 " + data.history.length + "건 · 확정 기록 " + data.desk.length + "건).", false);
+  }
+  function histKeyOf(it) {
+    if (!it || typeof it !== "object") return "";
+    if (it.id != null) return "i" + it.id;
+    return "t" + (it.ts || "") + "|" + String(it.claim || "").slice(0, 120);
+  }
+  function okHistItem(it) {
+    return !!it && typeof it === "object" && typeof it.claim === "string" &&
+           !!it.r && typeof it.r === "object" && typeof it.r.verdict === "string";
+  }
+  function okDeskRow(r) {
+    return !!r && typeof r === "object" && typeof r.claim === "string" && typeof r.final === "string";
+  }
+  // 있는 기록은 그대로 두고, 파일에만 있는 기록을 더한다 (같은 id는 건너뛴다)
+  function importBackup(text) {
+    var data = null;
+    try { data = JSON.parse(text); } catch (e) { data = null; }
+    if (data == null) { backupMsg("백업 파일을 읽지 못했습니다. 팩트노트에서 내려받은 .json 파일인지 확인해 주세요.", true); return; }
+    var inHist, inDesk;
+    if (Array.isArray(data)) { inHist = data; inDesk = []; }
+    else if (data && typeof data === "object") {
+      inHist = Array.isArray(data.history) ? data.history : [];
+      inDesk = Array.isArray(data.desk) ? data.desk : [];
+    } else { backupMsg("백업 파일 형식이 올바르지 않습니다.", true); return; }
+    if (!inHist.length && !inDesk.length) { backupMsg("이 파일에는 옮길 기록이 없습니다.", true); return; }
+
+    var curH = readHistory(), seenH = {}, badH = 0, dupH = 0, addH = 0;
+    curH.forEach(function (it) { var k = histKeyOf(it); if (k) seenH[k] = 1; });
+    inHist.forEach(function (it) {
+      if (!okHistItem(it)) { badH++; return; }
+      var k = histKeyOf(it);
+      if (seenH[k]) { dupH++; return; }
+      seenH[k] = 1; curH.push(it); addH++;
+    });
+    curH.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
+    var cutH = curH.length > RESTORE_MAX ? curH.length - RESTORE_MAX : 0;
+    if (cutH) curH = curH.slice(0, RESTORE_MAX);
+    writeHistory(curH);
+    var savedH = readHistory().length;
+    if (savedH < Math.min(curH.length, RESTORE_MAX)) {
+      backupMsg("불러온 내용을 저장하지 못했습니다. 브라우저 저장 공간이 부족할 수 있어요.", true);
+      return;
+    }
+
+    var curD = readDesk(), seenD = {}, addD = 0;
+    curD.forEach(function (r) { var k = histKeyOf(r); if (k) seenD[k] = 1; });
+    inDesk.forEach(function (r) {
+      if (!okDeskRow(r)) return;
+      var k = histKeyOf(r);
+      if (seenD[k]) return;
+      seenD[k] = 1; curD.push(r); addD++;
+    });
+    curD.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
+    var deskOk = writeDesk(curD);
+
+    renderRecent();
+    renderHistoryPage();
+
+    var bits = ["새로 더한 기록: 검증 기록 " + addH + "건", "확정 기록 " + addD + "건"];
+    if (dupH) bits.push("이미 있던 기록 " + dupH + "건은 건너뜀");
+    if (badH) bits.push("형식이 맞지 않아 빠진 항목 " + badH + "개");
+    if (cutH) bits.push("보관 한도(" + RESTORE_MAX + "건)를 넘어 오래된 기록 " + cutH + "건은 저장하지 않음");
+    if (!deskOk) bits.push("확정 기록은 저장하지 못함");
+    backupMsg((deskOk ? "불러왔습니다. " : "일부만 불러왔습니다. ") + bits.join(" · "), !deskOk);
+  }
+  $("backupBtn").addEventListener("click", exportBackup);
+  $("restoreBtn").addEventListener("click", function () { $("restoreFile").click(); });
+  $("restoreFile").addEventListener("change", function () {
+    var inp = $("restoreFile");
+    var f = inp.files && inp.files[0];
+    if (!f) return;
+    if (f.size > 20 * 1024 * 1024) { backupMsg("파일이 너무 큽니다(20MB 초과).", true); inp.value = ""; return; }
+    var fr = new FileReader();
+    fr.onload = function () {
+      try { importBackup(String(fr.result || "")); } catch (e) { backupMsg("불러오는 중 오류: " + e.message, true); }
+      inp.value = "";
+    };
+    fr.onerror = function () { backupMsg("파일을 읽지 못했습니다.", true); inp.value = ""; };
+    fr.readAsText(f, "utf-8");
+  });
+
   // ===== 기사 점검 =====
   var ART_MAX = 30000, ART_ITEMS_MAX = 20;
   var KINDS = ["숫자", "날짜", "직함", "발언", "기타"];
@@ -2022,7 +2239,7 @@ MP4 · MOV · WebM, 500MB 이하</div>
       var root = buildRes();
       det.appendChild(root);
       bindResult(root, root);
-      renderAll(it.r, it.ev);
+      renderAll(it.r, it.ev, it.sentence);
       bindSingle();
       card.appendChild(det);
     }
@@ -2337,7 +2554,7 @@ MP4 · MOV · WebM, 500MB 이하</div>
       s5.appendChild(ph("div", "summary", P.capCheck.r.summary || ""));
       var det = ph("details", "ai-det"); det.appendChild(ph("summary", "", "이유와 근거 보기"));
       var root = buildRes(); det.appendChild(root);
-      bindResult(root, root); renderAll(P.capCheck.r, P.capCheck.ev); bindSingle();
+      bindResult(root, root); renderAll(P.capCheck.r, P.capCheck.ev, P.caption || ""); bindSingle();
       s5.appendChild(det);
       box.appendChild(s5);
     }
