@@ -456,9 +456,9 @@
       <div id="docMsg" class="voice-msg" aria-live="polite"></div>
       <div id="voiceMsg" class="voice-msg" aria-live="polite"></div>
       <div class="examples">
-        <button class="ex" type="button" data-claim="대구시의 2024년 인구는 2023년보다 줄었다.">
+        <button class="ex" type="button" data-claim="대전시의 2024년 인구는 2023년보다 줄었다.">
           <span class="h"><svg class="i" viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>인구·통계</span>
-          <span class="d">대구시의 2024년 인구는 2023년보다 줄었다.</span>
+          <span class="d">대전시의 2024년 인구는 2023년보다 줄었다.</span>
         </button>
         <button class="ex" type="button" data-claim="정부는 2025년에 최저임금을 1만 원 이상으로 올렸다.">
           <span class="h"><svg class="i" viewBox="0 0 24 24"><path d="M4 9.5L12 4l8 5.5M6 10v8M10 10v8M14 10v8M18 10v8M4 20h16"/></svg>정책·제도</span>
@@ -549,7 +549,7 @@
           <img id="photoPrev" class="hidden" alt="올린 사진 미리보기">
         </label>
         <label class="f" for="photoCaption">사진 설명 (선택)</label>
-        <textarea id="photoCaption" placeholder="이 사진이 무엇을 보여 준다고 알려졌나요? 예: 2025년 ○월 대구 ○○에서 일어난 화재 현장"></textarea>
+        <textarea id="photoCaption" placeholder="이 사진이 무엇을 보여 준다고 알려졌나요? 예: 2025년 ○월 대전 ○○에서 일어난 화재 현장"></textarea>
         <label class="chk"><input type="checkbox" id="photoVerifyCaption" checked> 설명 문장도 기사·자료로 함께 검증하기</label>
         <div class="row">
           <button class="btn primary" id="photoGo" type="button" disabled>점검하기</button>
@@ -572,7 +572,7 @@ MP4 · MOV · WebM, 500MB 이하</div>
         </label>
         <video id="videoPrev" class="video-prev hidden" controls muted playsinline></video>
         <label class="f" for="videoCaption">영상 설명 (선택)</label>
-        <textarea id="videoCaption" placeholder="이 영상이 무엇을 보여 준다고 알려졌나요? 예: 2025년 ○월 대구 ○○에서 일어난 화재 현장"></textarea>
+        <textarea id="videoCaption" placeholder="이 영상이 무엇을 보여 준다고 알려졌나요? 예: 2025년 ○월 대전 ○○에서 일어난 화재 현장"></textarea>
         <label class="chk"><input type="checkbox" id="videoVerifyCaption" checked> 설명 문장도 기사·자료로 함께 검증하기</label>
         <label class="chk"><input type="checkbox" id="videoTranscribe"> 소리를 글자로 옮겨 말한 내용도 확인하기 (이 컴퓨터에서 처리 · 처음엔 약 250MB 모델을 내려받아야 하고 오래 걸림)</label>
         <label class="chk">말 언어 <select id="videoLang"><option value="korean">한국어</option><option value="english">영어</option><option value="">자동 감지</option></select></label>
@@ -706,7 +706,9 @@ MP4 · MOV · WebM, 500MB 이하</div>
       "mk.co.kr", "hankyung.com", "sedaily.com", "edaily.co.kr", "mt.co.kr", "fnnews.com", "asiae.co.kr", "heraldcorp.com",
       "kbs.co.kr", "imbc.com", "mbc.co.kr", "sbs.co.kr", "ytn.co.kr", "jtbc.co.kr", "mbn.co.kr", "tvchosun.com", "ichannela.com",
       "ohmynews.com", "pressian.com",
-      "imaeil.com", "yeongnam.com", "idaegu.com", "kyeongin.com",
+      "kyeongin.com",
+      "chungnamilbo.co.kr", "daejonilbo.com", "joongdo.co.kr", "cctoday.co.kr", "ggilbo.com",
+      "tjb.co.kr", "tjmbc.co.kr", "goodmorningcc.com", "dtnews24.com",
       "reuters.com", "apnews.com", "bbc.com", "bbc.co.uk"
     ] },
     { key: "enc", label: "백과사전", domains: ["wikipedia.org", "encykorea.aks.ac.kr", "terms.naver.com", "doopedia.co.kr", "britannica.com"] },
@@ -1407,7 +1409,7 @@ MP4 · MOV · WebM, 500MB 이하</div>
       "[일] 따로 확인해야 하는 주장이 2개 이상 섞여 있는지 본다.",
       "- 섞여 있으면 parts에 각각을 독립된 한 문장으로 나눠 담아라 (최대 5개).",
       "- 나눈 문장은 그것만 읽어도 검증할 수 있어야 한다. 원문에서 생략된 주어·지역·기간만 원문의 다른 부분에서 가져와 채우고, 원문에 없는 사실은 절대 더하지 마라.",
-      "- 예: '대구 인구는 줄었고 실업률은 올랐다' → parts: ['대구 인구는 줄었다.', '대구 실업률은 올랐다.']",
+      "- 예: '대전 인구는 줄었고 실업률은 올랐다' → parts: ['대전 인구는 줄었다.', '대전 실업률은 올랐다.']",
       "- 주장이 하나뿐이면 parts는 빈 배열로 둔다.",
       "",
       "[이] 주장이 근거를 검색해 검증할 수 있을 만큼 구체적인지 본다.",
@@ -3253,8 +3255,8 @@ MP4 · MOV · WebM, 500MB 이하</div>
   // ===== 취재 도우미 챗봇 =====
   // 판정 화면의 searchEvidence / verifyOne / askClaude / saveHistory 를 그대로 불러 쓴다.
   var CHAT_KEY = "factcheck_chat_v1", CHAT_SIZE_KEY = "factcheck_chat_size_v1", CHAT_MAX = 80;
-  // '대구·경북 언론' 범위용 도메인 (필요하면 추가/삭제)
-  var REGION_NEWS = ["imaeil.com", "yeongnam.com", "idaegu.com", "kbilbo.com", "kbmaeil.com", "hidomin.com", "newsmin.co.kr", "dgmbc.com", "tbc.co.kr"];
+  // '충남·대전 언론' 범위용 도메인 (필요하면 추가/삭제)
+  var REGION_NEWS = ["chungnamilbo.co.kr", "daejonilbo.com", "joongdo.co.kr", "cctoday.co.kr", "ggilbo.com", "tjb.co.kr", "tjmbc.co.kr", "goodmorningcc.com", "dtnews24.com"];
   var chat = { msgs: [], busy: false, routing: false, stage: null, pending: null };
   var cbLog = $("cb-log"), cbIn = $("cb-in"), cbWin = $("cb-win"), cbFab = $("cb-fab"), cbWarn = $("cb-warn");
 
@@ -3275,7 +3277,7 @@ MP4 · MOV · WebM, 500MB 이하</div>
   function cbScroll() { cbLog.scrollTop = cbLog.scrollHeight; }
   function cbLastResult() { for (var i = chat.msgs.length - 1; i >= 0; i--) if (chat.msgs[i].type === "result") return chat.msgs[i]; return null; }
 
-  var CB_WELCOME = "안녕하세요, 취재 도우미입니다. 이런 일을 도와 드려요.\n• 주장이 사실인지 물으면 근거를 찾아 판정합니다. (예: 지난해 대구 출생아는 1만 명이다)\n• 기사나 보도자료 문단을 붙여 넣으면 확인할 문장을 골라 드립니다.\n• 방금 판정에 대해 \"왜 이 판정이야?\", \"반박 근거만\" 처럼 물을 수 있어요.\n• \"정부 자료로만\", \"최근 한 달 기사로\", \"대구·경북 언론으로\" 처럼 검색 범위도 정할 수 있어요.";
+  var CB_WELCOME = "안녕하세요, 취재 도우미입니다. 이런 일을 도와 드려요.\n• 주장이 사실인지 물으면 근거를 찾아 판정합니다. (예: 지난해 대전 출생아는 7천 명이다)\n• 기사나 보도자료 문단을 붙여 넣으면 확인할 문장을 골라 드립니다.\n• 방금 판정에 대해 \"왜 이 판정이야?\", \"반박 근거만\" 처럼 물을 수 있어요.\n• \"정부 자료로만\", \"최근 한 달 기사로\", \"충남·대전 언론으로\" 처럼 검색 범위도 정할 수 있어요.";
 
   // ----- 화면 그리기 -----
   function cbCites(parent, text, ev) {
@@ -3491,10 +3493,10 @@ MP4 · MOV · WebM, 500MB 이하</div>
       "claim 작성 규칙:",
       "- 기자 말의 조건(누가, 어디서, 언제, 어떻게, 숫자)을 하나도 빼지 마라. 반드시 '~이다' 또는 '~했다' 같은 서술형 평서문 한 문장으로 끝낸다.",
       "- '어제', '오늘', '올해', '작년', '지난달' 같은 상대 날짜에는 실제 날짜를 괄호로 붙인다. 예: 어제(" + cbDay(y) + "), 올해(" + now.getFullYear() + "년).",
-      "- 앞 대화를 이어 묻는 경우('그럼 작년은?', '대구는?', '최근 한 달 기사로')는 가장 최근에 확인한 주장에서 바뀐 부분만 바꿔 완전한 문장으로 쓰고 inherited=true, inherited_note에 무엇을 바꿨는지 한 줄로 쓴다. 이어받은 게 아니면 inherited=false.",
+      "- 앞 대화를 이어 묻는 경우('그럼 작년은?', '대전은?', '최근 한 달 기사로')는 가장 최근에 확인한 주장에서 바뀐 부분만 바꿔 완전한 문장으로 쓰고 inherited=true, inherited_note에 무엇을 바꿨는지 한 줄로 쓴다. 이어받은 게 아니면 inherited=false.",
       "",
       "scope 규칙: 기자가 검색 범위를 말했을 때만 채우고, 말하지 않았으면 반드시 null이다. 주장에 지역 이름이 있어도 범위를 좁히지 마라.",
-      '- {"gov":true,"news":false,"region":false,"days":null,"label":"범위 설명"} 형태. "정부 자료로만" → gov만 true. "기사로/언론으로" → news만 true. "대구·경북 언론으로" → region=true. "최근 한 달"처럼 기간이 있으면 days에 일 수(한 달=30, 일주일=7, 1년=365). label은 기자가 말한 범위를 짧게 풀어 쓴다.',
+      '- {"gov":true,"news":false,"region":false,"days":null,"label":"범위 설명"} 형태. "정부 자료로만" → gov만 true. "기사로/언론으로" → news만 true. "충남·대전 언론으로" → region=true. "최근 한 달"처럼 기간이 있으면 days에 일 수(한 달=30, 일주일=7, 1년=365). label은 기자가 말한 범위를 짧게 풀어 쓴다.',
       "",
       "[앞 대화]",
       cbHistoryText(),
@@ -3564,7 +3566,7 @@ MP4 · MOV · WebM, 500MB 이하</div>
   function cbScopeOpts(sc) {
     if (!sc || typeof sc !== "object") return { opts: {}, label: "제한 없음 (정부·공공기관·통계 → 언론사·백과사전" + (el.allowBlog.checked ? "·블로그" : "") + " 순)" };
     var o = {}, parts = [];
-    if (sc.region) { o.regionOnly = true; o.extra = REGION_NEWS; parts.push("대구·경북 언론"); }
+    if (sc.region) { o.regionOnly = true; o.extra = REGION_NEWS; parts.push("충남·대전 언론"); }
     else if (sc.gov && !sc.news) { o.noNews = true; parts.push("정부·공공기관·통계 자료만"); }
     else if (sc.news && !sc.gov) { o.noGov = true; parts.push("언론사·백과사전만"); }
     var days = Number(sc.days);
