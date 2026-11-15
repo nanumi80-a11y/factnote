@@ -643,7 +643,7 @@ MP4 · MOV · WebM, 500MB 이하</div>
     <label class="f" for="claudeKey">Claude 키</label>
     <input type="password" id="claudeKey" autocomplete="off" placeholder="sk-ant-...">
     <label class="f" for="relayUrl">중계 주소 (고급, 비워 두면 자동)</label>
-    <input type="text" id="relayUrl" autocomplete="off" placeholder="http://localhost:8787 또는 내 중계 서버 주소">
+    <input type="text" id="relayUrl" autocomplete="off" placeholder="비워 두면 자동 (내 중계 서버 주소를 넣어도 됩니다)">
     <div class="msg" id="keyMsg" aria-live="polite"></div>
     <div class="row">
       <button class="btn primary" id="saveKeys" type="button">키 저장</button>
@@ -684,14 +684,15 @@ MP4 · MOV · WebM, 500MB 이하</div>
   var VERDICTS = ["사실", "대체로 사실", "절반의 사실", "대체로 사실 아님", "사실 아님", "판단 유보"];
   // Tavily는 브라우저 직접 호출(CORS)을 막으므로 server.js(로컬 중계)를 거칩니다.
   // Tavily는 브라우저에서 바로 부를 수 없어 '중계 서버'를 거칩니다.
-  // 기본값: 이 컴퓨터에서 start.bat 으로 연 화면이면 같은 주소, 그 밖(GitHub Pages 등)이면 http://localhost:8787.
+  // 기본값: 이 컴퓨터에서 start.bat 으로 연 화면(http)이면 같은 주소를, 그 밖(GitHub Pages·휴대폰)이면
+  // 이미 올려 둔 Cloudflare Worker(https://factnote-relay.nanumi80.workers.dev)를 씁니다.
   // 설정 창의 '중계 주소'에 직접 적으면 그 주소를 씁니다 (예: 내 Cloudflare Worker 주소).
   var RELAY_KEY = "factcheck_relay_v1";
   function relayBase() {
     var v = "";
     try { v = (localStorage.getItem(RELAY_KEY) || "").trim().replace(/\/+$/, ""); } catch (e) { v = ""; }
     if (/^https?:\/\//i.test(v)) return v;
-    return location.protocol === "http:" ? "" : "http://localhost:8787";
+    return location.protocol === "http:" ? "" : "https://factnote-relay.nanumi80.workers.dev";
   }
   // 출처 종류별 도메인. 하위 주소(news.sbs.co.kr 등)도 함께 해당됩니다. 필요하면 추가/삭제하세요.
   // 분류 순서가 곧 우선순위이며, 앞에 있는 종류가 더 믿을 만한 출처로 먼저 보여집니다.
@@ -2512,7 +2513,7 @@ MP4 · MOV · WebM, 500MB 이하</div>
     };
     rec.onerror = function (e) {
       failed = true; clearTimeout(timer);
-      var hint = " 이 앱 안의 미리보기 창이나 파일로 직접 연 화면에서는 안 될 수 있어요. 일반 Chrome·Edge에서 http://localhost:8787 을 열어 다시 시도해 보세요.";
+      var hint = " 이 앱 안의 미리보기 창이나 파일로 직접 연 화면에서는 안 될 수 있어요. 일반 Chrome·Edge에서 이 페이지를 다시 열어 시도해 보세요.";
       var map = {
         "not-allowed": "마이크 사용이 막혀 있습니다. 주소창 왼쪽 자물쇠 아이콘에서 마이크를 허용한 뒤 다시 눌러 주세요." + hint,
         "service-not-allowed": "이 환경에서는 음성 인식 서비스를 쓸 수 없습니다." + hint,

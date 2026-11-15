@@ -20,9 +20,10 @@
 ## 사용하려면
 
 1. **Claude API 키**와 **Tavily API 키**가 필요합니다. 설정 창에 입력하면 **이 브라우저에만** 저장됩니다. 이 저장소의 어떤 파일에도 키는 들어 있지 않습니다.
-2. Tavily는 브라우저에서 바로 부를 수 없어서 **중계 서버**가 필요합니다. 둘 중 하나를 고르세요.
-   - **내 컴퓨터에서 실행(가장 쉬움)**: [Node.js](https://nodejs.org)를 설치하고 `start.bat`(윈도우)을 실행하면 `http://localhost:8787`이 열립니다. 이 창을 닫으면 멈춥니다. GitHub Pages로 연 화면에서도 이 중계 서버가 켜져 있으면 그대로 동작합니다.
-   - **Cloudflare Worker**: `cloudflare-worker.js`를 본인 Cloudflare 계정에 올린 뒤, 나온 주소를 설정의 "중계 주소"에 적습니다.
+2. Tavily는 브라우저에서 바로 부를 수 없어서 **중계 서버**가 필요합니다. 보통은 따로 할 일이 없습니다.
+   - **휴대폰·다른 컴퓨터**: <https://nanumi80-a11y.github.io/factnote/> 로 열면 중계 주소가 자동으로 Cloudflare Worker(`https://factnote-relay.nanumi80.workers.dev`)로 잡힙니다. PC를 켜 둘 필요가 없습니다.
+   - **내 컴퓨터에서 실행**: [Node.js](https://nodejs.org)를 설치하고 `start.bat`(윈도우)을 실행하면 `http://localhost:8787`이 열립니다. 이 창을 닫으면 멈춥니다.
+   - **내 Cloudflare Worker로 바꾸기**: `cloudflare-worker.js`를 본인 Cloudflare 계정에 올린 뒤, 나온 주소를 설정의 "중계 주소"에 적습니다.
 
 ## 알아둘 점
 
