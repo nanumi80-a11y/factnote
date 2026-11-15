@@ -1720,7 +1720,8 @@ MP4 · MOV · WebM, 500MB 이하</div>
       .trim();
   }
   // 복사할 글: 판정 + 주장 + 요약 + 이유 + 고친 문장 + 출처
-  function copyTextOf(root) {    var d = root && root._copy;
+  function copyTextOf(root) {
+    var d = root && root._copy;
     if (!d) return "";
     var r = d.r || {}, ev = d.ev || [];
     var claim = String(d.claim || "").trim();
